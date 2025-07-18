@@ -230,6 +230,10 @@ class UserManagementView(View):
 
     # -------------------- Profile --------------------
     def update_profile(self, request):
+    #       
+    # Handles profile update via AJAX.
+    # Accepts POST requests and updates the user model.
+    # 
         if request.method == 'POST':
             userName = request.session.get('userName')
             user = User.objects.get(userName=userName)
