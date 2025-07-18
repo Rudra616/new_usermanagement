@@ -1,0 +1,32 @@
+  small.error {
+      color: red;
+      font-size: 0.85em;
+      display: block;
+      margin-top: 2px;
+  }
+  #formMessage.success {
+      color: green;
+  }
+  #formMessage.error {
+      color: red;
+  }
+
+  #loader {
+      display: none; /* 🛑 Add this */
+      position: fixed; /* Use fixed for full screen overlay */
+      left: 50%;
+      top: 50%;
+      z-index: 9999;
+      width: 80px;
+      height: 80px;
+      margin: -40px 0 0 -40px;
+      border: 12px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 12px solid #3498db;
+      animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }

@@ -1,0 +1,94 @@
+
+{% block body %}
+{% load static %}
+<body>
+    <!-- Spinner Start -->
+  
+    <!-- Spinner End -->
+
+
+    <!-- Topbar Start -->
+   
+    <!-- Topbar End -->
+
+
+    <!-- Navbar Start -->
+  
+    <!-- Navbar End -->
+
+
+    <!-- Page Header Start -->
+    <div class="container-fluid page-header pt-5 mb-6 wow fadeIn" data-wow-delay="0.1s">
+        <div class="container text-center pt-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <div class="bg-white p-5">
+                        <h1 class="display-6 text-uppercase mb-3 animated slideInDown">Services</h1>
+                        <nav aria-label="breadcrumb animated slideInDown">
+                            <ol class="breadcrumb justify-content-center mb-0">
+                                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                <li class="breadcrumb-item"><a href="#">Pages</a></li>
+                                <li class="breadcrumb-item" aria-current="page">Services</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+
+    <!-- Service Start -->
+    {% include "content_service.html" %}
+
+    <!-- Service End -->
+
+
+    <!-- Appoinment Start -->
+     {% include "online_appoinment.html" %}
+    <!-- Appoinment End -->
+
+
+    <!-- Testimonial Start -->
+        {% include "worker.html" %}
+    <!-- Testimonial End -->
+
+
+    <!-- Newsletter Start -->
+   
+    <!-- Newsletter End -->
+
+
+    <!-- Footer Start -->
+       {% include "footer.html" %}
+
+    <!-- Footer End -->
+
+
+    <!-- Copyright Start -->
+    <div class="container-fluid text-body copyright py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    &copy; <a class="fw-semi-bold" href="#">Your Site Name</a>, All Right Reserved.
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <!--/*** This template is free as long as you keep the below author’s credit link/attribution link/backlink. ***/-->
+                    <!--/*** If you'd like to use the template without the below author’s credit link/attribution link/backlink, ***/-->
+                    <!--/*** you can purchase the Credit Removal License from "https://htmlcodex.com/credit-removal". ***/-->
+                    Designed By <a class="fw-semi-bold" href="https://htmlcodex.com">HTML Codex</a> Distributed by <a href="https://themewagon.com" target="_blank">ThemeWagon</a></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Copyright End -->
+
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i
+            class="bi bi-arrow-up"></i></a>
+
+
+    
+{% endblock %}

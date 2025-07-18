@@ -1,0 +1,225 @@
+{% load static %}
+
+{% block css %}
+<!-- Bootstrap CSS -->
+{% endblock %}
+
+{% block body %}
+<div class="container ">
+    <div class="row">
+        <div class="col">
+            <h2>Welcome, {{ username.firstName }} {{ username.lastName }}</h2>
+        </div>
+    </div>  
+
+    <!-- Django Messages -->
+    <div class="row">
+        <div class="col ">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- AJAX Response -->
+    <div id="ajaxResponseMessage"></div>
+
+    <!-- Profile Form -->
+    <form id="updateProfileForm" method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data" class="mt-3 border p-4 rounded shadow-sm">
+        {% csrf_token %}
+        
+        <div class="row mb-3">
+            <div class="col">
+                <label for="first_name" class="form-label">First Name:</label>
+                <input type="text" name="first_name" class="form-control" value="{{ username.firstName }}" id="first_name">
+                <small class="error text-danger"></small>
+            </div> 
+            <div class="col">    
+                <label for="last_name" class="form-label">Last Name:</label>
+                <input type="text" name="last_name" class="form-control" value="{{ username.lastName }}" id="last_name">
+                <small class="error text-danger"></small>
+            </div>   
+        </div>    
+
+        <div class="mb-3">
+            <label for="username" class="form-label">Username (read-only):</label>
+            <input type="text" name="username" class="form-control" value="{{ username.userName }}" id="username" readonly>
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Email:</label>
+            <input type="email" name="email" class="form-control" value="{{ username.email }}" id="email">
+            <small class="error text-danger"></small>
+        </div>    
+
+        <div class="row mb-3">
+            <div class="col">
+                <label for="phone_number" class="form-label">Phone Number:</label>
+                <input type="text" name="phone_number" class="form-control" value="{{ username.phoneNumber }}" id="phone_number">
+                <small class="error text-danger"></small>
+            </div>
+            <div class="col">
+                <label for="address" class="form-label">Address:</label>
+                <input type="text" name="address" class="form-control" value="{{ username.address }}" id="address">
+                <small class="error text-danger"></small>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="date_of_birth" class="form-label">Date of Birth:</label>
+            <input type="date" name="date_of_birth" class="form-control" id="date_of_birth" 
+                {% if username.dateOfBirth %} value="{{ username.dateOfBirth|date:'Y-m-d' }}" {% endif %}>
+            <small class="error text-danger"></small>
+        </div>
+                
+        <div class="row mb-3">
+            <div class="col">
+                <label for="state" class="form-label">State:</label>
+                <select id="state" name="state" class="form-select">
+                    <option value="">Select State</option>
+                    {% for state in states %}
+                        <option value="{{ state.id }}" {% if username.state and username.state.id == state.id %}selected{% endif %}>{{ state.name }}</option>
+                    {% endfor %}
+                </select>
+                <small class="error text-danger"></small>
+            </div>    
+
+            <div class="col">
+                <label for="district" class="form-label">District:</label>
+                <select id="district" name="district" class="form-select">
+                    <option value="">Select District</option>
+                    {% for district in districts %}
+                        <option value="{{ district.id }}" {% if username.district and username.district.id == district.id %}selected{% endif %}>{{ district.name }}</option>
+                    {% endfor %}
+                </select>
+                <small class="error text-danger"></small>
+            </div>    
+        </div>    
+
+        <div class="mb-3">
+            {% if username.image %}
+                <img src="{{ username.image.url }}" alt="User Image" class="img-thumbnail mb-2" width="120">
+            {% endif %}
+            <label class="form-label">Upload New Image:</label>
+            <input class="form-control" type="file" name="image">
+        </div>    
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary w-50">Update Profile</button>
+        </div>
+    </form>
+</div>
+
+<!-- JQuery & Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function(){
+
+    // Load districts when state changes
+    $('#state').change(function(){
+        var stateId = $(this).val();
+        $('#district').html('<option value="">Loading...</option>');
+        if(stateId){
+            $.ajax({
+                url: "{% url 'get_districts' %}",
+                data: {'state_id': stateId},
+                success: function(data){
+                    var districtOptions = '<option value="">Select District</option>';
+                    $.each(data, function(index, district){
+                        districtOptions += `<option value="${district.id}">${district.name}</option>`;
+                    });
+                    $('#district').html(districtOptions);
+                }
+            });
+        } else {
+            $('#district').html('<option value="">Select District</option>');
+        }
+    });
+
+    // AJAX form submission
+    $('#updateProfileForm').submit(function(e){
+        e.preventDefault();
+
+        $('.error').text('');
+        $('#ajaxResponseMessage').html('');
+
+        let valid = true;
+
+        const requiredFields = [
+            { id: '#first_name', name: 'First Name' },
+            { id: '#last_name', name: 'Last Name' },
+            { id: '#email', name: 'Email' },
+            { id: '#phone_number', name: 'Phone Number' },
+            { id: '#address', name: 'Address' },
+            { id: '#date_of_birth', name: 'Date of Birth' },
+            { id: '#state', name: 'State' },
+            { id: '#district', name: 'District' }
+        ];
+
+        requiredFields.forEach(function(field){
+            const val = $(field.id).val();
+            if(!val || val.trim() === ''){
+                $(field.id).siblings('.error').text(field.name + ' is required.');
+                valid = false;
+            }
+
+            if(field.id === '#phone_number' && val.length !== 10){
+                $(field.id).siblings('.error').text('Phone Number must be exactly 10 digits.');
+                valid = false;
+            }
+        });
+
+        if(!valid) return;
+
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response){
+                var alertClass = response.success ? 'alert-success' : 'alert-danger';
+                $('#ajaxResponseMessage').html(`
+                    <div class="alert ${alertClass} alert-dismissible fade show mt-3" role="alert">
+                        ${response.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `);
+            },
+            error: function(){
+                $('#ajaxResponseMessage').html(`
+                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                        Something went wrong. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `);
+            }
+        });
+    });
+
+    // Input filters
+    function inputFilter(selector, regex, maxLength = null) {
+        $(document).on('input', selector, function () {
+            let value = $(this).val().replace(regex, '');
+            if (maxLength && value.length > maxLength) {
+                value = value.substring(0, maxLength);
+            }
+            $(this).val(value);
+        });
+    }
+
+    inputFilter('#first_name, #last_name', /[^a-zA-Z\s]/g);
+    inputFilter('#phone_number', /[^0-9]/g, 10);
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,160 @@
+
+{% extends "index.html" %}
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .pagination a {
+        margin: 0 5px;
+        text-decoration: none;
+        color: #007bff;
+        cursor: pointer;
+    }
+    .pagination span {
+        margin: 0 5px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 8px;
+        border: 1px solid #ddd;
+    }
+    th {
+        background-color: #343a40;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background-color: #2c2f33;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<h2>Welcome Admin: {{ userdetails.userName }}</h2>
+<h3>All Users</h3>
+
+<div class="main">
+    <form id="filterForm" method="get" onsubmit="return false;">
+        <input type="text" name="search" id="searchInput" placeholder="Search username" value="{{ search_query }}">
+        <button id="searchBtn">Search</button>
+        <select name="per_page" id="perPageSelect">
+            <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+            <option value="35" {% if per_page == '35' %}selected{% endif %}>35</option>
+            <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+            <option value="all" {% if per_page == 'all' %}selected{% endif %}>All</option>
+        </select>
+    </form>
+
+    <div id="userTableSection"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+function fetchUsers(params = {}) {
+    // Add default page=1 if not present
+    if (!params.page) params.page = 1;
+
+    const queryString = new URLSearchParams(params).toString();
+    const newUrl = window.location.pathname + '?' + queryString;
+    window.history.pushState({}, '', newUrl);
+
+    // Clear previous search count to avoid duplicates
+    $('#userTableSection').empty();
+
+    $.ajax({
+        url: "{% url 'admin_dashboard' %}",
+        data: params,
+        type: 'GET',
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        success: function(data) {
+            if (data.search_count !== null) {
+                $('#userTableSection').prepend(
+                    `<p><b>${data.search_count}</b> users found for "<b>${params.search || ''}</b>"</p>`
+                );
+            }
+            renderTable(data.users);
+            renderPagination(data.pagination);
+        },
+        error: function(xhr, status, error) {
+            $('#userTableSection').html('<p>Error loading users. Please try again.</p>');
+        }
+    });
+}
+
+function renderTable(users) {
+    let html = '<table>';
+    html += '<thead><tr>';
+    html += '<th>ID</th><th>First Name</th><th>Last Name</th><th>Username</th><th>Email</th><th>Address</th><th>District</th><th>State</th><th>Date of Birth</th><th>Actions</th>';
+    html += '</tr></thead><tbody>';
+
+    if (users.length === 0) {
+        html += '<tr><td colspan="10">No users found.</td></tr>';
+    } else {
+        users.forEach(user => {
+            html += `<tr>
+                <td>${user.id}</td>
+                <td>${user.first_name}</td>
+                <td>${user.last_name}</td>
+                <td>${user.username}</td>
+                <td>${user.email}</td>
+                <td>${user.address}</td>
+                <td>${user.district}</td>
+                <td>${user.state}</td>
+                <td>${user.date_of_birth || ''}</td>
+                <td>
+                    <a href="/app/delete_user/${user.id}/" onclick="return confirm('Are you sure you want to delete ${user.username}?');">Delete</a>
+                </td>
+            </tr>`;
+        });
+    }
+    html += '</tbody></table>';
+
+    $('#userTableSection').append(html);
+}
+
+function renderPagination(pagination) {
+    let html = '<div class="pagination">';
+    if (pagination.has_previous) {
+        html += `<a href="#" class="pagelink" data-page="${pagination.current_page - 1}">Previous</a>`;
+    }
+    html += `<span>Page ${pagination.current_page} of ${pagination.total_pages}</span>`;
+    if (pagination.has_next) {
+        html += `<a href="#" class="pagelink" data-page="${pagination.current_page + 1}">Next</a>`;
+    }
+    html += '</div>';
+
+    $('#userTableSection').append(html);
+}
+
+$(document).ready(function() {
+    // Initial fetch with values from template context
+    fetchUsers({
+        search: "{{ search_query|escapejs }}",
+        per_page: "{{ per_page|escapejs }}",
+        page: 1,
+    });
+
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        const search = $('#searchInput').val();
+        const per_page = $('#perPageSelect').val();
+        fetchUsers({ search, per_page, page: 1 });
+    });
+
+    $('#perPageSelect').on('change', function() {
+        const search = $('#searchInput').val();
+        const per_page = $('#perPageSelect').val();
+        fetchUsers({ search, per_page, page: 1 });
+    });
+
+    $(document).on('click', '.pagelink', function(e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        const search = $('#searchInput').val();
+        const per_page = $('#perPageSelect').val();
+        fetchUsers({ page, search, per_page });
+    });
+});
+</script>
+{% endblock %}

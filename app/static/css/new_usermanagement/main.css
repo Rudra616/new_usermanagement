@@ -1,0 +1,13 @@
+
+.error{
+    height: 10px;
+    width: 130px;
+    margin-bottom: 10px;
+    background-color: rgb(255, 153, 127);
+}
+#errornum{
+    height: 10px;
+    width: 130px;
+    margin-bottom: 10px;
+    background-color: rgb(255, 146, 132);
+}

@@ -1,0 +1,112 @@
+
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/register.css' %}" />
+{% endblock css %}
+ 
+{% block body %}
+<div id="loader" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+     background: rgba(0,0,0,0.5); z-index: 9999; text-align: center; padding-top: 20%;">
+  <div class="spinner-border text-light" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+
+<div class="title_center">
+  <h3 class="title text-center">Register Form</h3>
+</div>
+
+
+<form id="registerForm" method="POST" enctype="multipart/form-data" style="max-width: 70%; margin: auto;">
+  {% csrf_token %}
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label for="FirstName" class="form-label">First Name*</label>
+      <input type="text" class="form-control" name="first_name" id="FirstName" maxlength="15" />
+      <small class="error"></small>
+    </div>
+    <div class="col-md-6">
+      <label for="LastName" class="form-label">Last Name*</label>
+      <input type="text" class="form-control" name="last_name" id="LastName" maxlength="18" />
+      <small class="error"></small>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <label for="username" class="form-label">User Name*</label>
+      <input type="text" name="username" class="form-control" id="username" maxlength="150" />
+      <small class="error"></small>
+    </div>
+    <div class="col-md-6">
+      <label for="password" class="form-label">Password*</label>
+      <input type="password" name="password" class="form-control" id="password" maxlength="10" minlength="6" />
+      <small class="error"></small>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <label for="phone_number" class="form-label">Phone Number*</label>
+      <input type="text" name="phone_number" id="phone_number" maxlength="15" class="form-control" />
+      <small class="error"></small>
+    </div>
+    <div class="col-md-6">
+      <label for="email" class="form-label">Email*</label>
+      <input type="email" name="email" id="email" class="form-control" maxlength="254" />
+      <small class="error"></small>
+    </div>
+  </div>
+
+  <div class="col-12 mt-3">
+    <label for="address" class="form-label">Address*</label>
+    <input type="text" name="address" id="address" class="form-control" maxlength="255" />
+    <small class="error"></small>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <label for="state" class="form-label">State*</label>
+      <select id="state" name="state" class="form-control">
+        <option value="">-- Select State --</option>
+        {% for s in states %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+      </select>
+      <small class="error"></small>
+    </div>
+
+    <div class="col-md-6">
+      <label for="district" class="form-label">District*</label>
+      <select id="district" name="district" class="form-control">
+        <option value="">-- Select District --</option>
+      </select>
+      <small class="error"></small>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <label for="date_of_birth" class="form-label">Date of Birth*</label>
+      <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" min="1900-01-01" max="2023-01-01" />
+      <small class="error"></small>
+    </div>
+    <div class="col-md-6">
+      <label for="formFile" class="form-label">Upload Image (Optional)</label>
+      <input class="form-control" type="file" name="image" id="formFile" />
+    </div>
+  </div>
+
+  <div class="submit-center mt-4 text-center">
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </div>
+  <div id="formMessage" class="mt-3 text-center"></div>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script src="{% static 'js/register.js' %}"></script>
+
+
+{% endblock %}
