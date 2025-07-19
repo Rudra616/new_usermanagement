@@ -8,7 +8,9 @@
         </div>
         <div class="card-body">
           <div id="formMessage" class="alert d-none"></div>
-          <form id="loginInfo" method="POST" action="{% url 'login' %}">
+          <form id="loginInfo" method="POST" action="{% url 'spa_router' 'login' %}
+
+">
             {% csrf_token %}
             <div class="mb-3">
               <label for="name" class="form-label">Username</label>

@@ -39,7 +39,28 @@
 
     <!-- Template Stylesheet -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet" />
-
+<style>
+  /* Global loading states - ADD THIS ONLY */
+  .global-ajax-loading {
+    cursor: progress !important;
+  }
+  .form-ajax-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  .form-ajax-loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.5);
+    z-index: 1000;
+    cursor: progress;
+  }
+</style>
     {% block css %}{% endblock %}
   </head>
   <body>
@@ -85,198 +106,13 @@
     <!-- Template Javascript -->
     <script src="{% static 'js/main.js' %}"></script>
 
+<script>
+  const refreshCaptchaUrl = "{% url 'refresh_captcha' %}";
+
+</script>
     <!-- AJAX & Navbar Update Script -->
-    <script>
-      // Function to initialize login form JS
-      function initLoginForm() {
-        $.ajaxSetup({
-          headers: {
-            "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
-          },
-        });
+    <script src="{% static 'js/index.js' %}"></script>
 
-        $("#loginInfo").off("submit").on("submit", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          $(".error").text("");
-          $("#formMessage")
-            .removeClass("alert-success alert-danger d-block")
-            .addClass("d-none")
-            .html("");
-
-          let valid = true;
-          const username = $("#name").val().trim();
-          const password = $("#password").val().trim();
-          const captcha = $("#captcha").val().trim();
-
-          if (!username) {
-            $("#name").siblings(".error").text("Username is required.");
-            valid = false;
-          }
-          if (!password) {
-            $("#password").siblings(".error").text("Password is required.");
-            valid = false;
-          }
-          if (!captcha) {
-            $("#captcha").siblings(".error").text("Captcha is required.");
-            valid = false;
-          }
-          if (!valid) return false;
-
-          showLoader();
-
-          $.ajax({
-            url: $("#loginInfo").attr("action"),
-            type: "POST",
-            data: $(this).serialize(),
-            headers: {
-              "X-Requested-With": "XMLHttpRequest",
-            },
-            success: function (response) {
-              hideLoader();
-              if (response.success && response.html) {
-                $("#main-content").html(response.html);
-                history.pushState({}, "", response.redirect_url);
-                new WOW().init();
-
-                // Dynamically update navbar after login
-                $.ajax({
-                  url: "/app/navbar/",
-                  headers: { "X-Requested-With": "XMLHttpRequest" },
-                  success: function (data) {
-                    // Replace entire navbar container (not just nav element)
-                    $(".container-fluid.bg-white.sticky-top").replaceWith(
-                      $(data.html).filter(".container-fluid.bg-white.sticky-top")
-                    );
-                  },
-                  error: function () {
-                    console.error("Failed to update navbar.");
-                  },
-                });
-              } else {
-                displayMessage("Unexpected response from server.", "danger");
-              }
-            },
-            error: function () {
-              hideLoader();
-              displayMessage("Something went wrong. Try again.", "danger");
-            },
-          });
-
-          return false;
-        });
-
-        // Captcha refresh button
-        $("#refreshCaptchaBtn")
-          .off("click")
-          .on("click", function () {
-            showLoader();
-            $.ajax({
-              url: "{% url 'refresh_captcha' %}",
-              type: "GET",
-              success: function (data) {
-                if (data.captcha_code) {
-                  $("#captchaImage").html(data.captcha_code);
-                } else if (data.captcha) {
-                  $("#captchaImage").html(data.captcha);
-                }
-              },
-              error: function () {
-                console.error("Error refreshing captcha.");
-                displayMessage("Failed to refresh captcha.", "warning");
-              },
-              complete: function () {
-                hideLoader();
-              },
-            });
-          });
-
-        function showLoader() {
-          $("#formMessage")
-            .removeClass("d-none")
-            .addClass("alert alert-info d-block")
-            .html("Loading...");
-        }
-        function hideLoader() {
-          $("#formMessage")
-            .addClass("d-none")
-            .removeClass("alert alert-info d-block")
-            .html("");
-        }
-        function displayMessage(msg, type) {
-          const alertClass =
-            type === "danger"
-              ? "alert-danger"
-              : type === "warning"
-              ? "alert-warning"
-              : "alert-success";
-          $("#formMessage")
-            .removeClass("d-none")
-            .addClass("alert " + alertClass + " d-block")
-            .html(msg);
-        }
-      }
-
-      // AJAX page loading function
-      function loadPage(url) {
-        $.ajax({
-          url: url,
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-          success: function (data) {
-            var htmlContent = data.html || data;
-            var tempDiv = $("<div>").html(htmlContent);
-            var newContent = tempDiv.find("#main-content").html();
-
-            if (newContent) {
-              $("#main-content").html(newContent);
-            } else {
-              $("#main-content").html(htmlContent);
-            }
-
-            new WOW().init();
-
-            // Initialize login form if login page loaded
-            if (url.includes("/login")) {
-              initLoginForm();
-            }
-          },
-          error: function () {
-            alert("Failed to load page.");
-          },
-        });
-      }
-
-      $(document).ready(function () {
-        new WOW().init();
-
-        if (window.location.pathname.includes("/login")) {
-          initLoginForm();
-        }
-
-        // Handle navbar link clicks with AJAX load
-        $(document).on(
-          "click",
-          ".navbar-nav a#nav-item.nav-link, .navbar-nav .dropdown-menu a.dropdown-item",
-          function (e) {
-            e.preventDefault();
-
-            var url = $(this).attr("href");
-            if (url === window.location.pathname) {
-              return; // already on page
-            }
-
-            loadPage(url);
-            history.pushState(null, null, url);
-          }
-        );
-
-        // Handle back/forward buttons
-        window.onpopstate = function () {
-          loadPage(location.pathname);
-        };
-      });
-    </script>
 
     {% block script %}{% endblock %}
   </body>

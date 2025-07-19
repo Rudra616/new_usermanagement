@@ -1,151 +1,155 @@
-    <div
-      class="container-fluid bg-primary text-white d-none d-lg-flex wow fadeIn"
-      data-wow-delay="0.1s"
-    >
-      <div class="container py-3">
-        <div class="d-flex align-items-center">
-          <a href="{% url 'index' %}" class="text-white text-decoration-none">
-            <h2 class="fw-bold m-0">WELDORK</h2>
-          </a>
-          <div class="ms-auto d-flex align-items-center">
-            <small class="ms-4"
-              ><i class="fa fa-map-marker-alt me-3"></i>123 Street, New York,
-              USA</small
-            >
-            <small class="ms-4"
-              ><i class="fa fa-envelope me-3"></i>info@example.com</small
-            >
-            <small class="ms-4"
-              ><i class="fa fa-phone-alt me-3"></i>+012 345 67890</small
-            >
-            <div class="ms-3 d-flex">
-              <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
-                ><i class="fab fa-facebook-f"></i
-              ></a>
-              <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
-                ><i class="fab fa-twitter"></i
-              ></a>
-              <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
-                ><i class="fab fa-linkedin-in"></i
-              ></a>
-            </div>
-          </div>
+<div
+  class="container-fluid bg-primary text-white d-none d-lg-flex wow fadeIn"
+  data-wow-delay="0.1s"
+>
+  <div class="container py-3">
+    <div class="d-flex align-items-center">
+      <a
+        href="{% url 'spa_router' 'home' %}"
+        class="text-white text-decoration-none"
+      >
+        <h2 class="fw-bold m-0">WELDORK</h2>
+      </a>
+      <div class="ms-auto d-flex align-items-center">
+        <small class="ms-4"
+          ><i class="fa fa-map-marker-alt me-3"></i>123 Street, New York,
+          USA</small
+        >
+        <small class="ms-4"
+          ><i class="fa fa-envelope me-3"></i>info@example.com</small
+        >
+        <small class="ms-4"
+          ><i class="fa fa-phone-alt me-3"></i>+012 345 67890</small
+        >
+        <div class="ms-3 d-flex">
+          <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
+            ><i class="fab fa-facebook-f"></i
+          ></a>
+          <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
+            ><i class="fab fa-twitter"></i
+          ></a>
+          <a class="btn btn-sm-square btn-light text-primary ms-2" href="#"
+            ><i class="fab fa-linkedin-in"></i
+          ></a>
         </div>
       </div>
     </div>
-    <!-- Topbar End -->
+  </div>
+</div>
+<!-- Topbar End -->
 
-    <!-- Navbar Start -->
-    <div
-      class="container-fluid bg-white sticky-top wow fadeIn"
-      data-wow-delay="0.1s"
-    >
-      <div class="container">
-        <nav class="navbar navbar-expand-lg bg-white navbar-light p-lg-0">
-          <a href="{% url 'index' %}" class="navbar-brand d-lg-none">
-            <h1 class="fw-bold m-0"></h1>
-          </a>
-          <button
-            type="button"
-            class="navbar-toggler me-0"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarCollapse"
+<!-- Navbar Start -->
+<div
+  class="container-fluid bg-white sticky-top wow fadeIn"
+  data-wow-delay="0.1s"
+>
+  <div class="container">
+    <nav class="navbar navbar-expand-lg bg-white navbar-light p-lg-0">
+      <a href="{% url 'spa_router' 'home' %}" class="navbar-brand d-lg-none">
+        <h1 class="fw-bold m-0"></h1>
+      </a>
+      <button
+        type="button"
+        class="navbar-toggler me-0"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarCollapse"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <div class="navbar-nav">
+          <a
+            href="{% url 'spa_router' 'home' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'home' or request.resolver_match.url_name == 'index' %}active{% endif %}"
+            >Home</a
           >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <div class="navbar-nav">
-              <a
-                href="{% url 'home' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
-                >Home</a
-              >
-              <a
-                href="{% url 'about' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
-                >About</a
-              >
-              <a
-                href="{% url 'service' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'service' %}active{% endif %}"
-                >Services</a
-              >
+          <a
+            href="{% url 'spa_router' 'about' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'about' %}active{% endif %}"
+            >About</a
+          >
+          <a
+            href="{% url 'spa_router' 'service' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'service' %}active{% endif %}"
+            >Services</a
+          >
 
-              <div class="nav-item dropdown">
-                <a
-                  href="#"
-                  class="nav-link dropdown-toggle {% if request.resolver_match.url_name in 'feature team testimonial appoinment error' %}active{% endif %}"
-                  data-bs-toggle="dropdown"
-                  >Pages</a
-                >
-                <div
-                  class="dropdown-menu bg-light rounded-0 rounded-bottom m-0"
-                >
-                  <a
-                    href="{% url 'feature' %}"
-                    class="dropdown-item {% if request.resolver_match.url_name == 'feature' %}active{% endif %}"
-                    >Features</a
-                  >
-                  <a
-                    href="{% url 'team' %}"
-                    class="dropdown-item {% if request.resolver_match.url_name == 'team' %}active{% endif %}"
-                    >Our Team</a
-                  >
-                  <a
-                    href="{% url 'testimonial' %}"
-                    class="dropdown-item {% if request.resolver_match.url_name == 'testimonial' %}active{% endif %}"
-                    >Testimonial</a
-                  >
-                  <a
-                    href="{% url 'appoinment' %}"
-                    class="dropdown-item {% if request.resolver_match.url_name == 'appoinment' %}active{% endif %}"
-                    >Appointment</a
-                  >
-                  <a
-                    href="{% url 'error' %}"
-                    class="dropdown-item {% if request.resolver_match.url_name == 'error' %}active{% endif %}"
-                    >404 Page</a
-                  >
-                </div>
-              </div>
-
+          <div class="nav-item dropdown">
+            <a
+              href="#"
+              class="nav-link dropdown-toggle {% if request.resolver_match.kwargs.page in 'feature team testimonial appoinment error' %}active{% endif %}"
+              data-bs-toggle="dropdown"
+              >Pages</a
+            >
+            <div class="dropdown-menu bg-light rounded-0 rounded-bottom m-0">
               <a
-                href="{% url 'contact' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
-                >Contact</a
-              >
-
-              {% if request.session.userName %}
-              <a
-                href="{% url 'update_profile' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'update_profile' %}active{% endif %}"
-                >Update Profile</a
-              >
-              <a href="{% url 'logout' %}" class="nav-item nav-link">Logout</a>
-              {% else %}
-              <a
-                href="{% url 'login' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}"
-                >Login</a
+                href="{% url 'spa_router' 'feature' %}"
+                class="dropdown-item {% if request.resolver_match.kwargs.page == 'feature' %}active{% endif %}"
+                >Features</a
               >
               <a
-                href="{% url 'register' %}"
-                id="nav-item"
-                class="nav-item nav-link {% if request.resolver_match.url_name == 'register' %}active{% endif %}"
-                >Register</a
+                href="{% url 'spa_router' 'team' %}"
+                class="dropdown-item {% if request.resolver_match.kwargs.page == 'team' %}active{% endif %}"
+                >Our Team</a
               >
-              {% endif %}
-            </div>
-            <div class="ms-auto d-none d-lg-block">
-              <a href="#" class="btn btn-primary py-2 px-3">Get A Quote</a>
+              <a
+                href="{% url 'spa_router' 'testimonial' %}"
+                class="dropdown-item {% if request.resolver_match.kwargs.page == 'testimonial' %}active{% endif %}"
+                >Testimonial</a
+              >
+              <a
+                href="{% url 'spa_router' 'appoinment' %}"
+                class="dropdown-item {% if request.resolver_match.kwargs.page == 'appoinment' %}active{% endif %}"
+                >Appointment</a
+              >
+              <a
+                href="{% url 'spa_router' 'error' %}"
+                class="dropdown-item {% if request.resolver_match.kwargs.page == 'error' %}active{% endif %}"
+                >404 Page</a
+              >
             </div>
           </div>
-        </nav>
+
+          <a
+            href="{% url 'spa_router' 'contact' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'contact' %}active{% endif %}"
+            >Contact</a
+          >
+
+          {% if request.session.userName %}
+          <a
+            href="{% url 'spa_router' 'update_profile' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.url_name == 'update_profile' %}active{% endif %}"
+            >Update Profile</a
+          >
+          <!-- In your nav.html or wherever the logout button is -->
+          <a href="{% url 'spa_router' 'logout' %}" id="logoutButton" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+          {% else %}
+          <a
+            href="{% url 'spa_router' 'login' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}"
+            >Login</a
+          >
+          <a
+            href="{% url 'spa_router' 'register' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.url_name == 'register' %}active{% endif %}"
+            >Register</a
+          >
+          {% endif %}
+        </div>
+        <div class="ms-auto d-none d-lg-block">
+          <a href="#" class="btn btn-primary py-2 px-3">Get A Quote</a>
+        </div>
       </div>
-    </div>
+    </nav>
+  </div>
+</div>

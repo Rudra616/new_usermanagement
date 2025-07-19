@@ -20,7 +20,7 @@ from decouple import config
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(',')
-print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+# print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
 # Email settings
 EMAIL_HOST = 'smtp.gmail.com'

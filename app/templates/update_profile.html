@@ -1,10 +1,5 @@
-{% load static %}
 
-{% block css %}
-<!-- Bootstrap CSS -->
-{% endblock %}
-
-{% block body %}
+{% block main_content %}
 <div class="container ">
     <div class="row">
         <div class="col">
@@ -30,7 +25,7 @@
     <div id="ajaxResponseMessage"></div>
 
     <!-- Profile Form -->
-    <form id="updateProfileForm" method="POST" action="{% url 'update_profile' %}" enctype="multipart/form-data" class="mt-3 border p-4 rounded shadow-sm">
+    <form id="updateProfileForm" method="POST" action="{% url 'spa_router' 'update_profile' %}" enctype="multipart/form-data" class="mt-3 border p-4 rounded shadow-sm">
         {% csrf_token %}
         
         <div class="row mb-3">

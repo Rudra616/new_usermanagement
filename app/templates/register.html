@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{% static 'css/register.css' %}" />
 {% endblock css %}
  
-{% block body %}
+{% block main_content %}
 <div id="loader" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
      background: rgba(0,0,0,0.5); z-index: 9999; text-align: center; padding-top: 20%;">
   <div class="spinner-border text-light" role="status">
@@ -18,7 +18,7 @@
 </div>
 
 
-<form id="registerForm" method="POST" enctype="multipart/form-data" style="max-width: 70%; margin: auto;">
+<form id="registerForm" method="POST" enctype="multipart/form-data" action="{% url 'spa_router' 'register' %}">
   {% csrf_token %}
   <div class="row g-3">
     <div class="col-md-6">
