@@ -58,12 +58,8 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarCollapse">
         <div class="navbar-nav">
-          <a
-            href="{% url 'spa_router' 'home' %}"
-            id="nav-item"
-            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'home' or request.resolver_match.url_name == 'index' %}active{% endif %}"
-            >Home</a
-          >
+          <a href="{% url 'spa_router' 'home' %}" class="nav-item nav-link {% if ... %}active{% endif %}">Home</a>
+
           <a
             href="{% url 'spa_router' 'about' %}"
             id="nav-item"
@@ -128,7 +124,7 @@
             >Update Profile</a
           >
           <!-- In your nav.html or wherever the logout button is -->
-          <a href="{% url 'spa_router' 'logout' %}" id="logoutButton" class="nav-link">
+          <a id="logoutBtn" class="nav-link">
             <i class="fas fa-sign-out-alt"></i> Logout
           </a>
           {% else %}

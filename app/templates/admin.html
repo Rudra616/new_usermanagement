@@ -1,5 +1,4 @@
 
-{% extends "index.html" %}
 {% block css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
@@ -30,7 +29,7 @@
 </style>
 {% endblock %}
 
-{% block body %}
+{% block main_content %}
 <h2>Welcome Admin: {{ userdetails.userName }}</h2>
 <h3>All Users</h3>
 
@@ -63,7 +62,7 @@ function fetchUsers(params = {}) {
     $('#userTableSection').empty();
 
     $.ajax({
-        url: "{% url 'admin_dashboard' %}",
+        url: "{% url 'spa_router' page='admin' %}",
         data: params,
         type: 'GET',
         headers: { "X-Requested-With": "XMLHttpRequest" },

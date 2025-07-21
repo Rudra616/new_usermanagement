@@ -1,5 +1,15 @@
 {% load static %}
 {% block main_content %}
+{% if messages %}
+  <div id="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
     {% include "Carousel.html" %}
     {% include "about_partial.html" %}
     {% include "Features1.html" %}
