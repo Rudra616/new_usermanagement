@@ -109,7 +109,13 @@
   .global-ajax-loading * {
     pointer-events: none;
   }
-  
+  .error{
+    color:red;
+  }
+  .nav-link{
+    cursor:pointer;
+  }
+
   /* Responsive adjustments */
   @media (max-width: 768px) {
     .spinner-content {
@@ -158,7 +164,7 @@
     <!-- Main Content Start -->
     <div id="main-content">
       {% block main_content %}
-      {% include 'home.html' %}
+      {% include section|default:'home.html' %}
       {% endblock %}
     </div>
     <!-- Main Content End -->

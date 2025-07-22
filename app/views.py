@@ -8,7 +8,7 @@ from django.utils.html import strip_tags
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-import traceback
+from django.views.decorators.csrf import csrf_protect
 
 from django.conf import settings
 from django.contrib import messages
@@ -18,8 +18,10 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.core.files.images import get_image_dimensions
+from django.utils.decorators import method_decorator
 
 from django.views.decorators.http import require_POST
+@method_decorator(csrf_exempt, name='dispatch')
 
 class UserManagementView(View):
         # -------------------- Dynamic SPA Router --------------------
@@ -37,7 +39,10 @@ class UserManagementView(View):
             })
         return redirect('/app/')
 
-    def spa_router(self, request, page="home"):
+    def spa_router(self, request, page="home",**kwargs):
+        token = kwargs.get('token')
+
+        print(f"spa_router called with page: {page}")
         csrf_token = get_token(request)
         context = {
             'csrf_token': csrf_token,
@@ -59,9 +64,16 @@ class UserManagementView(View):
         elif page == "forgot-password" and request.method == 'POST':
             return self.forgot_password_view(request)
         elif page == "reset-password" and request.method == 'POST':
-            token = request.resolver_match.kwargs.get('token')  # extract token if exists
             return self.reset_password_view(request, token)
     
+        if page == "reset-password":
+            context['token'] = token
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    html = render_to_string('reset_password.html', context=context, request=request)
+                    return JsonResponse({'html': html})
+            return render(request, 'index.html', context=context)
+
+
         # Validate requested page
         valid_pages = [
             "home", "about", "feature", "service", "team", "testimonial",
@@ -72,7 +84,7 @@ class UserManagementView(View):
         if page not in valid_pages:
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string('404.html', request=request)
-                return JsonResponse({'html': html})
+                return JsonResponse({'html': html,'message': 'not valid page'})
             return render(request, '404.html', status=404)
     
         # Prepare context for certain pages
@@ -95,20 +107,25 @@ class UserManagementView(View):
                 # If not logged in, redirect to login
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     html = render_to_string('login.html', request=request)
-                    return JsonResponse({'html': html, 'csrf_token': csrf_token})
+                    return JsonResponse({'html': html,'message': 'login page',})
                 return redirect('spa_router', page='login')
-    
+
+        if page == "admin" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            if request.GET.get('search') or request.GET.get('per_page') or request.GET.get('page'):
+                return self.admin_dashboard(request)
+
+
         # For AJAX requests, render only the page template and return as JSON
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             html = render_to_string(f'{page}.html', context=context, request=request)
-            return JsonResponse({'html': html, 'csrf_token': csrf_token})
+            return JsonResponse({'html': html,'message': 'successfully work',})
     
         # For normal requests, render the SPA container page (index.html)
         return render(request, 'index.html', context=context)
     
     def navbar(self, request):
         html = render_to_string('nav.html', request=request)
-        return JsonResponse({'html': html})
+        return JsonResponse({'html': html,'message':'navbar'})
 
     
     # -------------------- Helper --------------------
@@ -188,7 +205,7 @@ class UserManagementView(View):
             states = State.objects.all()
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string('register.html', {'states': states}, request=request)
-                return JsonResponse({'html': html})
+                return JsonResponse({'html': html,'message':'ragister page'})
             return render(request, 'index.html')
 
     def get_districts(self, request):
@@ -268,7 +285,9 @@ class UserManagementView(View):
 
             # Login successful
             request.session['userName'] = user_obj.userName
-            redirect_url = '/app/admin-dashboard/' if user_obj.role == 'admin' else '/app/'
+            request.session['userRole'] = user_obj.role
+
+            redirect_page = 'admin' if user_obj.role == 'admin' else 'home'
 
             # For AJAX requests (SPA)
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -286,13 +305,13 @@ class UserManagementView(View):
                 return JsonResponse({
                     'success': True,
                     'html': html,
-                    'redirect_url': redirect_url,
+                    'redirect_page': redirect_page,
                     'userName': user_obj.userName,  
                     'user_role': user_obj.role  # Optional: for frontend customization
                 })
 
             # For traditional form submission (fallback)
-            return redirect(redirect_url)
+            return redirect("spa_roter",redirect_page)
 
         # GET request - render login page
         captcha_code = self.generate_captcha()
@@ -312,11 +331,25 @@ class UserManagementView(View):
         return render(request, 'index.html')
     # -------------------- Profile --------------------
     @csrf_exempt
-    def update_profile(self,request):
+    def update_profile(self, request):
         if request.method == "POST":
             userName = request.session.get("userName")
             user = get_object_or_404(User, userName=userName)
 
+            # Check if username is changing and if it's already taken
+            new_username = request.POST.get("username", "").strip()
+            if new_username and new_username != user.userName:
+                if User.objects.filter(userName=new_username).exclude(id=user.id).exists():
+                    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                        return JsonResponse({
+                            "success": False,
+                            "message": "This username is already taken. Please try another one."
+                        })
+                    else:
+                        messages.error(request, "This username is already taken.")
+                        return redirect("spa_router", page="update_profile")
+                user.userName = new_username
+            # Update other fields
             user.firstName = request.POST.get("first_name", "").strip()
             user.lastName = request.POST.get("last_name", "").strip()
             user.email = request.POST.get("email", "").strip()
@@ -329,8 +362,8 @@ class UserManagementView(View):
             user.state = State.objects.get(id=state_id) if state_id else None
             user.district = District.objects.get(id=district_id) if district_id else None
 
-            # if request.FILES.get("image"):
-            #     user.image = request.FILES["image"]
+            if request.FILES.get("image"):
+                user.image = request.FILES["image"]
 
             user.save()
 
@@ -362,28 +395,67 @@ class UserManagementView(View):
         search_query = request.GET.get('search', '')
         if search_query:
             all_users = all_users.filter(userName__icontains=search_query)
-        per_page = request.GET.get('per_page', 10)
+
+        per_page = request.GET.get('per_page', '10')
+        if per_page == 'all':
+            per_page = all_users.count() or 1  # Show all users
+        else:
+            try:
+                per_page = int(per_page)
+            except ValueError:
+                per_page = 10  # fallback
+
         paginator = Paginator(all_users, per_page)
         page_number = request.GET.get('page', 1)
         page_obj = paginator.get_page(page_number)
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            context = {
-                'userdetails': user_obj,  # add this
-                'page_obj': page_obj,
-                'search_query': search_query,
-                'per_page': per_page
-            }
-            html = render_to_string('admin.html', context, request=request)
-            return JsonResponse({'html': html})
-        return render(request, 'admin.html')
+            users_list = []
+            for user in page_obj:
+                users_list.append({
+                    'id': user.id,
+                    'first_name': user.firstName,
+                    'last_name': user.lastName,
+                    'username': user.userName,
+                    'email': user.email,
+                    'address': user.address,
+                    'district': user.district.name if user.district else '',
+                    'state': user.state.name if user.state else '',
+                    'date_of_birth': user.dateOfBirth.strftime('%Y-%m-%d') if user.dateOfBirth else None
+                })
 
-    def delete_user(self, request, id):
-        User.objects.filter(id=id).delete()
-        return JsonResponse({'success': True, 'message': 'User deleted successfully.'})
+            return JsonResponse({
+                'success': True,
+                'users': users_list,
+                'pagination': {
+                    'current_page': page_obj.number,
+                    'total_pages': paginator.num_pages,
+                    'has_previous': page_obj.has_previous(),
+                    'has_next': page_obj.has_next()
+                },
+                'search_count': all_users.count()
+            })
+        context = {
+            'userdetails': user_obj,
+            'page_obj': page_obj,
+            'search_query': search_query,
+            'per_page': request.GET.get('per_page', '10'),
+        }
+        return render(request, 'admin.html', context)
 
+    @csrf_exempt    
+    def delete_user(self,request, user_id):
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                user = get_object_or_404(User, pk=user_id)
+                user.delete()
+                return JsonResponse({'success': True, 'message': 'User deleted'})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
     # -------------------- Password Reset --------------------
     def forgot_password_view(self, request):
+        print("helo")
         if request.method == 'POST':
             username = request.POST.get('username')
             user = User.objects.filter(userName=username).first()
@@ -393,25 +465,63 @@ class UserManagementView(View):
                 user.reset_expire = timezone.now() + timezone.timedelta(hours=1)
                 user.save()
                 reset_link = request.build_absolute_uri(f'/app/reset-password/{token}/')
-                send_mail('Password Reset', f'Reset your password: {reset_link}', settings.EMAIL_HOST_USER, [user.email])
-            messages.info(request, "If username exists, a reset link has been sent to the email.")
+                send_mail(
+                    'Password Reset',
+                    f'Reset your password: {reset_link}',
+                    settings.EMAIL_HOST_USER,
+                    [user.email]
+                )
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': "If username exists, a reset link has been sent to the email."})
+            else:
+                messages.info(request, "If username exists, a reset link has been sent to the email.")
+                return redirect('spa_router', page='login')  # fallback for normal POST
+
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             html = render_to_string('forgot_password.html', request=request)
             return JsonResponse({'html': html})
         return render(request, 'index.html')
 
+
+
     def reset_password_view(self, request, token):
         user = get_object_or_404(User, reset_token=token, reset_expire__gt=timezone.now())
+    
         if request.method == 'POST':
             password = request.POST.get('password')
             confirm = request.POST.get('confirm_password')
+    
             if password == confirm:
                 user.password = make_password(password)
                 user.reset_token = None
                 user.reset_expire = None
                 user.save()
-                return JsonResponse({'success': True, 'message': 'Password reset successful. You can now log in.'})
+    
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Password reset successful. You can now log in.',
+                        'redirect_url': '/app/login/'
+                    })
+                else:
+                    messages.success(request, "Password reset successful. You can now log in.")
+                    return redirect('spa_router', page='login')
             else:
-                return JsonResponse({'success': False, 'message': 'Passwords do not match.'})
-        html = render_to_string('reset_password.html', request=request)
-        return JsonResponse({'html': html})
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Passwords do not match.'})
+                else:
+                    messages.error(request, 'Passwords do not match.')
+    
+        # For GET or failed POST, render reset-password form template with token in context
+        context = {
+            'token': token,
+            'csrf_token': get_token(request),
+        }
+        html = render_to_string('reset-password.html', context=context, request=request)
+    
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            # Return partial HTML for SPA AJAX load
+            return JsonResponse({'html': html})
+        else:
+            # Full page load fallback (if someone visits URL directly)
+            return render(request, 'reset-password.html', context=context)

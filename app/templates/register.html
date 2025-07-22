@@ -13,7 +13,7 @@
 </div>
 
 
-<form id="registerForm" method="POST" enctype="multipart/form-data" action="{% url 'spa_router' 'register' %}">
+<form class="mx-5" id="registerForm" method="POST" enctype="multipart/form-data" action="{% url 'spa_router' 'register' %}" >
   {% csrf_token %}
   <div class="row g-3">
     <div class="col-md-6">
@@ -84,7 +84,7 @@
   <div class="row g-3 mt-3">
     <div class="col-md-6">
       <label for="date_of_birth" class="form-label">Date of Birth*</label>
-      <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" min="1900-01-01" max="2023-01-01" />
+      <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" min="2000-01-01" max="2025-01-01" />
       <small class="error"></small>
     </div>
     <div class="col-md-6">

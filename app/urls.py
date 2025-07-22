@@ -44,7 +44,7 @@ urlpatterns = [
     # Auth and profile POST handlers
     path('verify/<uuid:token>/', user_view.verify_email, name='verify_email'),
     path('logout/', user_view.logout, name='logout'),
-    path('delete-user/<int:id>/', user_view.delete_user, name='delete_user'),
+    path('delete_user/<int:user_id>/', user_view.delete_user, name='delete_user'),
     path('reset-password/<uuid:token>/', user_view.reset_password_view, name='reset_password'),
 
     # Catch-all for SPA routes

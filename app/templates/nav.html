@@ -116,7 +116,18 @@
             >Contact</a
           >
 
+
           {% if request.session.userName %}
+          {% if request.session.userRole == 'admin' %}
+          <a
+            href="{% url 'spa_router' 'admin' %}"
+            id="nav-item"
+            class="nav-item nav-link {% if request.resolver_match.kwargs.page == 'admin' %}active{% endif %}"
+          >
+            Dashboard
+          </a>
+            {% endif %}
+
           <a
             href="{% url 'spa_router' 'update_profile' %}"
             id="nav-item"

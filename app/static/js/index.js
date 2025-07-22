@@ -95,20 +95,24 @@ function initLoginForm() {
         error: function () {
           displayMessage("Something went wrong. Try again.", "danger");
         },
-        complete: function() {
+        complete: function () {
           toggleSpinner(false);
-        }
+        },
       });
 
       return false;
     });
 
+  $(document).on("click", "#forgotPasswordBtn", function (e) {
+    e.preventDefault();
+    loadPage("/app/forgot-password/");
+  });
   // Captcha refresh button handler
   $("#refreshCaptchaBtn")
     .off("click")
     .on("click", function () {
       $(this).prop("disabled", true);
-      toggleSpinner(true,"refresh Captcha ...");
+      toggleSpinner(true, "refresh Captcha ...");
 
       $.ajax({
         url: refreshCaptchaUrl,
@@ -214,9 +218,9 @@ function initRegisterForm() {
           displayMessage("An error occurred while saving the user.", "danger");
           console.error("Registration error:", error);
         },
-        complete: function() {
+        complete: function () {
           toggleSpinner(false);
-        }
+        },
       });
 
       return false;
@@ -228,7 +232,7 @@ function initRegisterForm() {
     .on("change", function () {
       const stateId = $(this).val();
       if (stateId) {
-        toggleSpinner(true,'Loading districts...');
+        toggleSpinner(true, "Loading districts...");
         $.ajax({
           url: "/app/get-districts/",
           type: "GET",
@@ -253,9 +257,9 @@ function initRegisterForm() {
           error: function () {
             console.error("Failed to fetch districts.");
           },
-          complete: function() {
+          complete: function () {
             toggleSpinner(false);
-          }
+          },
         });
       } else {
         $("#district")
@@ -282,6 +286,9 @@ function loadPage(url) {
         $("#main-content").html(htmlContent);
       }
 
+      // 👇 Force URL to stay /app/
+      window.history.pushState({}, "", "/app/");
+
       new WOW().init();
 
       if (url.includes("/login")) {
@@ -290,20 +297,113 @@ function loadPage(url) {
         initRegisterForm();
       } else if (url.includes("/update_profile")) {
         initUpdateProfileForm();
+      } else if (url.includes("/forgot-password")) {
+        initForgotPasswordForm();
+      } else if (url.includes("/reset-password")) {
+        initResetPasswordForm();
       }
     },
     error: function () {
       displayMessage("Failed to load page.", "danger");
     },
-    complete: function() {
+    complete: function () {
       toggleSpinner(false);
-    }
+    },
   });
+}
+
+$(document).ready(function () {
+  const currentPath = window.location.pathname;
+
+  if (currentPath.includes("/app/admin/")) {
+    loadPage("/app/admin/");
+  } else if (currentPath.includes("/app/login/")) {
+    loadPage("/app/login/");
+  } else if (currentPath.includes("/app/register/")) {
+    loadPage("/app/register/");
+  } else if (currentPath.includes("/app/update_profile/")) {
+    loadPage("/app/update_profile/");
+  } else {
+    loadPage("/app/home/");
+  }
+});
+
+function initForgotPasswordForm() {
+  $("#forgotPasswordForm").on("submit", function (e) {
+    e.preventDefault();
+    var form = $(this);
+    var actionUrl = form.attr("action") || window.location.href;
+    $.ajax({
+      type: "POST",
+      url: actionUrl,
+      data: form.serialize(),
+      success: function (response) {
+        $("#forgotPasswordMessage")
+          .removeClass("d-none alert-danger")
+          .addClass("alert-success")
+          .text(response.message);
+      },
+      error: function () {
+        $("#forgotPasswordMessage")
+          .removeClass("d-none alert-success")
+          .addClass("alert-danger")
+          .text("Something went wrong. Try again.");
+      },
+    });
+  });
+}
+
+function initResetPasswordForm() {
+  $("#resetPasswordForm")
+    .off("submit")
+    .on("submit", function (e) {
+      e.preventDefault();
+
+      const form = $(this);
+      const actionUrl = form.attr("action");
+
+      $.ajax({
+        type: "POST",
+        url: actionUrl,
+        data: form.serialize(),
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        success: function (response) {
+          if (response.success) {
+            // Show success message
+            $("#resetPasswordMessage")
+              .removeClass("alert-danger")
+              .addClass("alert alert-success")
+              .text(response.message)
+              .show();
+
+            // Redirect after a short delay
+            setTimeout(() => {
+              loadPage("/app/login/"); // Load login page via SPA
+            }, 2000);
+          } else {
+            // Show error message like "Passwords do not match"
+            $("#resetPasswordMessage")
+              .removeClass("alert-success")
+              .addClass("alert alert-danger")
+              .text(response.message)
+              .show();
+          }
+        },
+        error: function () {
+          // Show generic error
+          $("#resetPasswordMessage")
+            .removeClass("alert-success")
+            .addClass("alert alert-danger")
+            .text("Something went wrong. Please try again.")
+            .show();
+        },
+      });
+    });
 }
 
 // Update navbar dynamically (used after login/logout)
 function updateNavbar() {
-  toggleSpinner(true,'update navbar...');
+  toggleSpinner(true, "update navbar...");
   $.ajax({
     url: "/app/navbar/",
     headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -315,9 +415,9 @@ function updateNavbar() {
     error: function () {
       console.error("Failed to update navbar.");
     },
-    complete: function() {
+    complete: function () {
       toggleSpinner(false);
-    }
+    },
   });
 }
 
@@ -405,14 +505,15 @@ $(document).on("click", "#logoutBtn", function (e) {
       console.error("Logout error:", xhr.responseText);
       alert("Error: Could not logout. CSRF missing?");
     },
-    complete: function() {
+    complete: function () {
       toggleSpinner(false);
-    }
+    },
   });
 });
 
 function initUpdateProfileForm() {
   console.log("1");
+
   $("#state")
     .off("change")
     .on("change", function () {
@@ -432,20 +533,16 @@ function initUpdateProfileForm() {
               .append('<option value="">-- Select District --</option>');
             $.each(data, function (index, district) {
               $("#district").append(
-                '<option value="' +
-                  district.id +
-                  '">' +
-                  district.name +
-                  "</option>"
+                `<option value="${district.id}">${district.name}</option>`
               );
             });
           },
           error: function () {
             console.error("Failed to fetch districts.");
           },
-          complete: function() {
+          complete: function () {
             toggleSpinner(false);
-          }
+          },
         });
       } else {
         $("#district")
@@ -464,7 +561,19 @@ function initUpdateProfileForm() {
       $("#ajaxResponseMessage").html("");
 
       let valid = true;
-      console.log("3");
+
+      // Validate Username
+      let username = $("#username").val().trim();
+      if (username === "") {
+        $("#username").siblings(".error").text("Username is required.");
+        valid = false;
+      } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        $("#username")
+          .siblings(".error")
+          .text("Username can only contain letters, numbers, and underscores.");
+        valid = false;
+      }
+
       // Validate First Name
       let firstName = $("#first_name").val().trim();
       if (firstName === "") {
@@ -550,6 +659,7 @@ function initUpdateProfileForm() {
       $("#submitBtn").prop("disabled", true);
       toggleSpinner(true, "Updating profile...");
       console.log("5");
+
       $.ajax({
         url: $(this).attr("data-url"),
         type: "POST",
@@ -560,6 +670,7 @@ function initUpdateProfileForm() {
         success: function (response) {
           $("#submitBtn").prop("disabled", false);
           console.log("6");
+
           if (response.success && response.html) {
             console.log("7");
             $("#main-content").html(response.html);
@@ -568,43 +679,47 @@ function initUpdateProfileForm() {
             initUpdateProfileForm();
             console.log("9");
             $("#ajaxResponseMessage").html(`
-                            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                                ${response.message}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `);
+              <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                  ${response.message}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+          `);
           } else {
-            $("#ajaxResponseMessage").html(`
-                            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                                ${
-                                  response.message ||
-                                  "Update failed. Try again."
-                                }
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `);
+            if (response.message) {
+              // Special case: show username error if username already taken
+              if (response.message.includes("username")) {
+                $("#username")
+                  .siblings(".error")
+                  .text(response.message);
+              } else {
+                $("#ajaxResponseMessage").html(`
+                  <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                      ${response.message}
+                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+              `);
+              }
+            }
           }
         },
         error: function () {
           $("#submitBtn").prop("disabled", false);
           $("#ajaxResponseMessage").html(`
-                        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                            Something went wrong. Please try again.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    `);
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                Something went wrong. Please try again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `);
         },
-        complete: function() {
+        complete: function () {
           toggleSpinner(false);
-        }
+        },
       });
     });
 
   // Input restrictions
   $("#first_name, #last_name").on("input", function () {
-    let cleanValue = $(this)
-      .val()
-      .replace(/[^a-zA-Z\s]/g, "");
+    let cleanValue = $(this).val().replace(/[^a-zA-Z\s]/g, "");
     $(this).val(cleanValue);
   });
 
@@ -612,4 +727,44 @@ function initUpdateProfileForm() {
     let cleanValue = $(this).val().replace(/\D/g, "");
     $(this).val(cleanValue.slice(0, 10)); // Limit to 10 digits
   });
+
+  $("#username").on("input", function () {
+    let cleanValue = $(this).val().replace(/[^a-zA-Z0-9_]/g, "");
+    $(this).val(cleanValue);
+  });
 }
+const deleteUserUrl = "{% url 'delete_user' user_id=0 %}";
+
+
+$(document).on('click', '.deleteUserBtn', function(e) {
+    e.preventDefault();
+
+    const userId = $(this).data('id');
+    const username = $(this).data('username');
+
+    if (confirm(`Are you sure you want to delete ${username}?`)) {
+        $.ajax({
+            url: `/app/delete_user/${userId}/`,
+            type: 'POST',
+            headers: { 
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrftoken // Pass CSRF token
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(`${username} deleted successfully.`);
+                    // Reload the current users list
+                    const search = $('#searchInput').val();
+                    const per_page = $('#perPageSelect').val();
+                    fetchUsers({ search, per_page, page: 1 });
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Delete failed:", error);
+                alert('Failed to delete user. Please try again.');
+            }
+        });
+    }
+});
