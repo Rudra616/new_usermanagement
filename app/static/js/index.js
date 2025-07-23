@@ -1,5 +1,6 @@
 // Global loading handlers
 let isLoading = false;
+const csrftoken = getCookie('csrftoken');
 
 // Function to show/hide spinner
 // Updated spinner control function
@@ -30,8 +31,13 @@ function displayMessage(msg, type) {
 // Login form initialization
 function initLoginForm() {
   $.ajaxSetup({
-    headers: {
-      "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
+    beforeSend: function (xhr, settings) {
+      if (
+        !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) &&
+        !this.crossDomain
+      ) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      }
     },
   });
 
@@ -74,7 +80,9 @@ function initLoginForm() {
         data: $(this).serialize(),
         headers: {
           "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrftoken,
         },
+
         success: function (response) {
           if (response.success && response.html) {
             $("#main-content").html(response.html);
@@ -175,6 +183,10 @@ function initRegisterForm() {
           valid = false;
         }
       });
+      $("#phone_number").on("input", function () {
+      let cleanValue = $(this).val().replace(/\D/g, ""); // \D not a digit for all later g
+      $(this).val(cleanValue.slice(0, 10)); // Limit to 10 digits
+      });
 
       if (!valid) return false;
 
@@ -189,7 +201,9 @@ function initRegisterForm() {
         contentType: false,
         headers: {
           "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrftoken,
         },
+
         success: function (response) {
           if (response.success) {
             displayMessage(response.message, "success");
@@ -366,7 +380,10 @@ function initResetPasswordForm() {
         type: "POST",
         url: actionUrl,
         data: form.serialize(),
-        headers: { "X-Requested-With": "XMLHttpRequest" },
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrftoken,
+        },
         success: function (response) {
           if (response.success) {
             // Show success message
@@ -468,21 +485,6 @@ function getCookie(name) {
   }
   return cookieValue;
 }
-const csrftoken = getCookie("csrftoken");
-$.ajaxSetup({
-  headers: { "X-CSRFToken": csrftoken },
-});
-$.ajaxSetup({
-  beforeSend: function (xhr, settings) {
-    if (
-      !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) &&
-      !this.crossDomain
-    ) {
-      xhr.setRequestHeader("X-CSRFToken", csrftoken);
-    }
-  },
-});
-
 // Logout handler with CSRF token in data
 $(document).on("click", "#logoutBtn", function (e) {
   e.preventDefault();
@@ -490,8 +492,9 @@ $(document).on("click", "#logoutBtn", function (e) {
   $.ajax({
     type: "POST",
     url: "/app/logout/",
-    data: { csrfmiddlewaretoken: csrftoken },
-    headers: { "X-Requested-With": "XMLHttpRequest" },
+    data: {},
+    headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRFToken": csrftoken},
+
     success: function (response) {
       if (response.success) {
         console.log(response.message);
@@ -666,40 +669,34 @@ function initUpdateProfileForm() {
         data: formData,
         processData: false,
         contentType: false,
-        headers: { "X-Requested-With": "XMLHttpRequest" },
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrftoken,
+        },
+
         success: function (response) {
           $("#submitBtn").prop("disabled", false);
           console.log("6");
 
-          if (response.success && response.html) {
-            console.log("7");
-            $("#main-content").html(response.html);
-            console.log("8");
-            new WOW().init();
-            initUpdateProfileForm();
-            console.log("9");
-            $("#ajaxResponseMessage").html(`
-              <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                  ${response.message}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-          `);
-          } else {
-            if (response.message) {
-              // Special case: show username error if username already taken
-              if (response.message.includes("username")) {
-                $("#username")
-                  .siblings(".error")
-                  .text(response.message);
-              } else {
-                $("#ajaxResponseMessage").html(`
-                  <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                      ${response.message}
-                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                  </div>
-              `);
-              }
+          if (response.success) {
+            if (response.html) {
+              $("#main-content").html(response.html);
+              new WOW().init();
+              initUpdateProfileForm();
             }
+            $("#ajaxResponseMessage").html(`
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            ${response.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `);
+          } else {
+            $("#ajaxResponseMessage").html(`
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            ${response.message || "Something went wrong."}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `);
           }
         },
         error: function () {
@@ -719,52 +716,55 @@ function initUpdateProfileForm() {
 
   // Input restrictions
   $("#first_name, #last_name").on("input", function () {
-    let cleanValue = $(this).val().replace(/[^a-zA-Z\s]/g, "");
+    let cleanValue = $(this)
+      .val()
+      .replace(/[^a-zA-Z\s]/g, "");
     $(this).val(cleanValue);
   });
 
   $("#phone_number").on("input", function () {
-    let cleanValue = $(this).val().replace(/\D/g, "");
+    let cleanValue = $(this).val().replace(/\D/g, ""); // \D not a digit for all later g
     $(this).val(cleanValue.slice(0, 10)); // Limit to 10 digits
   });
 
   $("#username").on("input", function () {
-    let cleanValue = $(this).val().replace(/[^a-zA-Z0-9_]/g, "");
+    let cleanValue = $(this)
+      .val()
+      .replace(/[^a-zA-Z0-9_]/g, "");
     $(this).val(cleanValue);
   });
 }
 const deleteUserUrl = "{% url 'delete_user' user_id=0 %}";
 
+$(document).on("click", ".deleteUserBtn", function (e) {
+  e.preventDefault();
 
-$(document).on('click', '.deleteUserBtn', function(e) {
-    e.preventDefault();
+  const userId = $(this).data("id");
+  const username = $(this).data("username");
 
-    const userId = $(this).data('id');
-    const username = $(this).data('username');
-
-    if (confirm(`Are you sure you want to delete ${username}?`)) {
-        $.ajax({
-            url: `/app/delete_user/${userId}/`,
-            type: 'POST',
-            headers: { 
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRFToken": csrftoken // Pass CSRF token
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert(`${username} deleted successfully.`);
-                    // Reload the current users list
-                    const search = $('#searchInput').val();
-                    const per_page = $('#perPageSelect').val();
-                    fetchUsers({ search, per_page, page: 1 });
-                } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Delete failed:", error);
-                alert('Failed to delete user. Please try again.');
-            }
-        });
-    }
+  if (confirm(`Are you sure you want to delete ${username}?`)) {
+    $.ajax({
+      url: `/app/delete_user/${userId}/`,
+      type: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": csrftoken, // Pass CSRF token
+      },
+      success: function (response) {
+        if (response.success) {
+          alert(`${username} deleted successfully.`);
+          // Reload the current users list
+          const search = $("#searchInput").val();
+          const per_page = $("#perPageSelect").val();
+          fetchUsers({ search, per_page, page: 1 });
+        } else {
+          alert("Error: " + response.message);
+        }
+      },
+      error: function (xhr, status, error) {
+        console.error("Delete failed:", error);
+        alert("Failed to delete user. Please try again.");
+      },
+    });
+  }
 });

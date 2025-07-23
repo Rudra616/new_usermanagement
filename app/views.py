@@ -8,20 +8,20 @@ from django.utils.html import strip_tags
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-from django.views.decorators.csrf import csrf_protect
 
 from django.conf import settings
 from django.contrib import messages
 from .models import User, District, State
 import uuid, random
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.core.files.images import get_image_dimensions
+# get_token: Creates or retrieves CSRF token.
+
+from django.views.decorators.csrf import csrf_protect
+# Skips CSRF check for certain views (SPA POST requests).
 from django.utils.decorators import method_decorator
 
 from django.views.decorators.http import require_POST
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 
 class UserManagementView(View):
         # -------------------- Dynamic SPA Router --------------------
@@ -154,6 +154,15 @@ class UserManagementView(View):
                 phone_number = request.POST.get('phone_number', '').strip()
                 image = request.FILES.get('image')
                 date_of_birth = request.POST.get('date_of_birth', '').strip()
+                
+                if image :
+                    # Get original file extension (e.g., .jpg or .png)
+                    extension = image.name.split('.')[-1]
+                    timestemp = timezone.now().strftime("%y-%m-%d_%H-%M-%S")
+                    # Create new filename: username_YYYY-MM-DD_HH-MM-SS.ext
+                    new_filename = f"{username}_{timestemp}.{extension}"
+                    print(new_filename)
+                    image.name = new_filename
 
                 if not all([first_name, last_name, username, password, email, address, district_id, state_id, phone_number, date_of_birth]):
                     return JsonResponse({'success': False, 'error': 'All fields are required.'})
@@ -330,7 +339,7 @@ class UserManagementView(View):
         # Traditional GET request
         return render(request, 'index.html')
     # -------------------- Profile --------------------
-    @csrf_exempt
+    # @csrf_exempt
     def update_profile(self, request):
         if request.method == "POST":
             userName = request.session.get("userName")
@@ -340,15 +349,15 @@ class UserManagementView(View):
             new_username = request.POST.get("username", "").strip()
             if new_username and new_username != user.userName:
                 if User.objects.filter(userName=new_username).exclude(id=user.id).exists():
-                    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                        return JsonResponse({
-                            "success": False,
-                            "message": "This username is already taken. Please try another one."
-                        })
-                    else:
-                        messages.error(request, "This username is already taken.")
-                        return redirect("spa_router", page="update_profile")
-                user.userName = new_username
+                    return JsonResponse({
+                        "success": False,
+                        "message": "This username is already taken. Please try another one."
+                    })
+                else:
+                    messages.error(request, "This username is already taken.")
+                    return redirect("spa_router", page="update_profile")
+            user.userName = new_username
+
             # Update other fields
             user.firstName = request.POST.get("first_name", "").strip()
             user.lastName = request.POST.get("last_name", "").strip()
@@ -443,7 +452,7 @@ class UserManagementView(View):
         }
         return render(request, 'admin.html', context)
 
-    @csrf_exempt    
+    # @csrf_exempt    
     def delete_user(self,request, user_id):
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:
